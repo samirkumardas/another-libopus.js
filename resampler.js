@@ -1,12 +1,12 @@
-function Decoder(worker) {
+function Resampler(worker) {
     this.worker = worker;
     this.worker.addEventListener('message', function(e) {
         switch (e.data.type) {
             case 'init' :
                 this.init(e.data.config.rate, e.data.config.channels);
                 break;
-            case 'decode' :
-                this.decode(e.data.buffer);
+            case 'resample' :
+                this.resample(e.data.buffer);
                 break;
             case 'destroy' :
                 this.destroy();
@@ -15,10 +15,10 @@ function Decoder(worker) {
         }
     });
 }
-Decoder.prototype.init = function(sampleRate, channels) {
+Resampler.prototype.init = function(sampleRate, channels) {
     this.channels = channels;
     var err = Module._malloc(4);
-    this.handle = _opus_decoder_create(sampleRate, this.channels, err);
+    this.handle = _opus_Resampler_create(sampleRate, this.channels, err);
     var err_num = Module.getValue(err, "i32");
     Module._free(err);
     if (err_num != 0) {
@@ -37,7 +37,7 @@ Decoder.prototype.init = function(sampleRate, channels) {
     this.pcm = Module.HEAPF32.subarray(this.pcm_ptr / 4, this.pcm_ptr / 4 + pcm_samples);
 }
 
-Decoder.prototype.decode = function(payload) {
+Resampler.prototype.resample = function(payload) {
     this.buf.set(new Uint8Array(payload));
     var ret = _opus_decode_float(this.handle, this.buf_ptr, payload.byteLength, this.pcm_ptr, this.frame_size, 0);
     if (ret < 0) {
@@ -53,10 +53,10 @@ Decoder.prototype.decode = function(payload) {
     }
 }
 
-Decoder.prototype.destroy = function() {
-    _opus_decoder_destroy(this.handle);
+Resampler.prototype.destroy = function() {
+    _opus_Resampler_destroy(this.handle);
     this.state = null;
     this.buf = null;
     this.pcm = null;
 }
-new Decoder(self);
+new Resampler(self);
