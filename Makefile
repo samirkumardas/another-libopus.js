@@ -1,12 +1,11 @@
-NATIVE_DIR=./
 
 EMCC_OPTS=-O3 --llvm-lto 1 --memory-init-file 0 -s BUILD_AS_WORKER=1 \
           -s NO_FILESYSTEM=1  -s EXPORTED_FUNCTIONS="['_malloc']" -s EXPORTED_RUNTIME_METHODS="['setValue', 'getValue']"
 
-OPUS_DIR=$(NATIVE_DIR)/opus
+OPUS_DIR=./opus
 OPUS_OBJ=$(OPUS_DIR)/.libs/libopus.a
 
-SPEEXDSP_DIR=$(NATIVE_DIR)/speexdsp
+SPEEXDSP_DIR=./speexdsp
 SPEEXDSP_OBJ=$(SPEEXDSP_DIR)/libspeexdsp/.libs/libspeexdsp.a
 
 OPUS_ENCODER=opus_encoder.js
