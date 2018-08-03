@@ -1,11 +1,11 @@
-EMCC_OPTS=-O3 --llvm-lto 1 --memory-init-file 0 -s BUILD_AS_WORKER=1 \
-          -s NO_FILESYSTEM=1 -s EXPORTED_FUNCTIONS="['_malloc']" -s EXPORTED_RUNTIME_METHODS="['setValue', 'getValue']"
+EMCC_OPTS=-O3 --llvm-lto 1 --memory-init-file 0 -s NO_FILESYSTEM=1 \
+		 -s EXPORTED_FUNCTIONS="['_malloc']" -s EXPORTED_RUNTIME_METHODS="['setValue', 'getValue']"
 
 LIBOPUS_STABLE=tags/v1.1.2
 
 POST_JS=./post-js
-POST_ENCODER=$(POST_JS)/opus-encoder.js
-POST_DECODER=$(POST_JS)/opus-decoder.js
+POST_ENCODER=$(POST_JS)/encoder.js
+POST_DECODER=$(POST_JS)/decoder.js
 
 OPUS_DIR=./opus
 OPUS_OBJ=$(OPUS_DIR)/.libs/libopus.a
