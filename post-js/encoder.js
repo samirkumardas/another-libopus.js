@@ -71,7 +71,7 @@ var SpeexResampler = (function() {
         switch (e.data.type) {
             case 'init' :
                 encoder = new Encoder(e.data.config.application, e.data.config.frameDuration, e.data.config.sampleRate,
-                    e.data.config.originalRate, e.data.config.channels);
+                    e.data.config.originalRate, e.data.config.channels, e.data.config.params);
                 break;
             case 'encode' :
                 encoder.encode(e.data.buffer);
@@ -83,7 +83,7 @@ var SpeexResampler = (function() {
         }
     });
 
-    function Encoder(application, frameDuration, sampleRate, originalRate, channels) {
+    function Encoder(application, frameDuration, sampleRate, originalRate, channels, params) {
         var err,
             bufSize,
             outSize;
@@ -104,6 +104,23 @@ var SpeexResampler = (function() {
         this.frameSize = sampleRate * frameDuration / 1000;
         this.channels = channels;
         this.handle = _opus_encoder_create(sampleRate, channels, application, err);
+
+        if (params && params.cbr) {
+            this.setConfig(0, 4006); // 4006 = OPUS_SET_VBR_REQUEST
+        }
+        if (params && params.bitRate) {
+            this.setConfig(params.bitRate, 4002); // 4002 = OPUS_SET_BITRATE_REQUEST
+        }
+        if (params && params.forceChannel) {
+            this.setConfig(params.forceChannel, 4022); // 4022 = OPUS_SET_FORCE_CHANNELS_REQUEST
+        }
+        if (params && params.expertFrameduration) {
+            this.setConfig(params.expertFrameduration, 4040); // 4040 = OPUS_SET_EXPERT_FRAME_DURATION_REQUEST
+        }
+        if (params && params.predictionDisabled) {
+            this.setConfig(0, 4042); // 4042 = OPUS_SET_PREDICTION_DISABLED_REQUEST
+        }
+
         if (Module.getValue(err, "i32") != 0) {
             self.postMessage({
                 type:'error',
@@ -122,7 +139,7 @@ var SpeexResampler = (function() {
                 return;
             }
         }
-        
+        Module._free(err);
         bufSize = 4 * this.frameSize * this.channels;
         this.bufPtr = Module._malloc(bufSize);
         this.buf = Module.HEAPF32.subarray(this.bufPtr / 4, (this.bufPtr + bufSize) / 4);
@@ -151,7 +168,7 @@ var SpeexResampler = (function() {
             this.buf.set(samples.subarray(0, size), this.bufPos);
             this.bufPos += size;
             samples = samples.subarray(size);
-            if (this.bufPos == this.frameSize) {
+            if (this.bufPos == this.buf.length) {
                 this.bufPos = 0;
                 ret = _opus_encode_float(this.handle, this.bufPtr, this.frameSize, this.outPtr, this.out.byteLength);
                 if (ret < 0) {
@@ -172,6 +189,12 @@ var SpeexResampler = (function() {
             });
         }
     }
+    Encoder.prototype.setConfig = function(value, constantNum) {
+        var location = Module._malloc(4);
+        Module.setValue(location, value, "i32");
+        _opus_encoder_ctl( this.handle, constantNum, location);
+        Module._free(location);
+    };
     Encoder.prototype.destroy = function() {
         _opus_encoder_destroy(this.handle);
         if (this.resampler) {
