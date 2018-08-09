@@ -1,13 +1,6 @@
 ### How to Decode:
 
     var worker = new Worker('dist/decoder.js');
-    worker.postMessage({
-        type: 'init',
-        config: {
-            sampleRate: this.config.sampleRate,
-            channels: this.config.channels
-        }
-    });
     worker.onmessage = (e) => {
         switch (e.data.type) {
             case 'error' :
@@ -19,6 +12,14 @@
             default:
         }
     };
+    /* Initialise Decoder */
+    worker.postMessage({
+        type: 'init',
+        config: {
+            sampleRate: this.config.sampleRate,
+            channels: this.config.channels
+        }
+    });
 
     /* Now send opus packet to worker */
     worker.postMessage({
@@ -42,7 +43,7 @@
             default:
         }
     };
-
+    /* Initialise Encoder */
     worker.postMessage({
         type: 'init',
         config: {
